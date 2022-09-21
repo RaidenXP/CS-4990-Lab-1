@@ -51,7 +51,7 @@ class Boid
         
         if(abs(dr) < PI/6 && kinematic.getRotationalVelocity() > 0.0){
           rotational_speed = -rotational_speed;
-        }else if(dr >= 0 && dr < PI/6){
+        }else if(abs(dr) >= 0 && abs(dr) < PI/6){
           rotational_speed = 0;
         }
         
