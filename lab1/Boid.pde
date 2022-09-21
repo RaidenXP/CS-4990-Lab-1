@@ -41,8 +41,8 @@ class Boid
         float rotational_speed = 1;
         float linear_speed = 5;
         
-        float arrivalAngle = PI/4;
-        float arrivalDistance = 200;
+        float arrivalAngle = PI;
+        float arrivalDistance = 300;
         
         PVector currentPos = kinematic.getPosition(); //<>//
         float distLeft = PVector.sub(currentPos, target).mag();
