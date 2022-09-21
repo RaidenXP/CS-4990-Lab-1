@@ -41,7 +41,11 @@ class Boid
         float rotational_speed = 1;
         float linear_speed = 5;
         
+        float arrivalAngle = PI/4;
+        float arrivalDistance = 200;
+        
         PVector currentPos = kinematic.getPosition(); //<>//
+        float distLeft = PVector.sub(currentPos, target).mag();
         float target_angle = atan2(target.y - currentPos.y, target.x - currentPos.x);
         float dr = normalize_angle_left_right(target_angle - kinematic.getHeading());
         
@@ -49,21 +53,15 @@ class Boid
           rotational_speed = -1; 
         }
         
-        if(abs(dr) < PI/6 && kinematic.getRotationalVelocity() > 0.0){
-          rotational_speed = -rotational_speed;
-        }else if(abs(dr) >= 0 && abs(dr) < PI/6){
-          rotational_speed = 0;
+        if(abs(dr) < arrivalAngle){
+          rotational_speed = dr/arrivalAngle * kinematic.max_rotational_speed - kinematic.getRotationalVelocity();
         }
         
-        float distLeft = PVector.sub(currentPos, target).mag();
-        
-        if(distLeft < 200 && kinematic.getSpeed() > 0.0){
-          linear_speed = -linear_speed;
-        } else if(distLeft >= 0 && distLeft < 200) {
-          linear_speed = 0;
+        if(distLeft < arrivalDistance){
+          linear_speed = distLeft/arrivalDistance * kinematic.max_speed - kinematic.getSpeed();
         }
         
-        println(kinematic.getRotationalVelocity() + ", " +  kinematic.getSpeed() + ", " + distLeft);
+        println(kinematic.getRotationalVelocity() + ", " +  kinematic.getSpeed() + ", " + distLeft + ", " + dr);
         
         kinematic.increaseSpeed(linear_speed * dt, rotational_speed * dt);
      }
