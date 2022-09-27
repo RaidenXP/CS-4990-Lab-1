@@ -34,7 +34,7 @@ class Boid
    }
 
    void update(float dt)
-   {
+   { 
      if (target != null)
      {  
         // TODO: Implement seek here
@@ -64,6 +64,11 @@ class Boid
         println(kinematic.getRotationalVelocity() + ", " +  kinematic.getSpeed() + ", " + distLeft + ", " + dr);
         
         kinematic.increaseSpeed(linear_speed * dt, rotational_speed * dt);
+        
+        if(distLeft < 10 && kinematic.getSpeed() < 1 && !(waypoints.isEmpty())){
+          follow(waypoints);
+        }
+        
      }
      
      // place crumbs, do not change     
@@ -118,6 +123,6 @@ class Boid
    {
       // TODO: change to follow *all* waypoints
       this.target = waypoints.get(0);
-      
+      waypoints.remove(0);
    }
 }
