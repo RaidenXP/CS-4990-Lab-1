@@ -38,10 +38,10 @@ class Boid
      if (target != null)
      {  
         // TODO: Implement seek here
-        float rotational_speed = 1;
-        float linear_speed = 5;
+        float rotational_speed = kinematic.max_rotational_speed;
+        float linear_speed = kinematic.max_speed;
         
-        float arrivalAngle = PI;
+        float arrivalAngle = PI/2;
         float arrivalDistance = 300;
         
         PVector currentPos = kinematic.getPosition(); //<>//
@@ -50,15 +50,22 @@ class Boid
         float dr = normalize_angle_left_right(target_angle - kinematic.getHeading());
         
         if(dr < 0){
-          rotational_speed = -1; 
+          rotational_speed = -1.0 * kinematic.max_rotational_speed; 
         }
         
         if(abs(dr) < arrivalAngle){
-          rotational_speed = dr/arrivalAngle * kinematic.max_rotational_speed - kinematic.getRotationalVelocity();
+          //old method
+          //rotational_speed = (dr/arrivalAngle * kinematic.max_rotational_speed) - kinematic.getRotationalVelocity();
+          
+          //method 1
+          rotational_speed = ((dr/arrivalAngle * kinematic.max_rotational_speed) - kinematic.getRotationalVelocity()) * 20;
+          
+          //method 2
+          //rotational_speed = (dr/arrivalAngle * kinematic.max_rotational_speed) - kinematic.getRotationalVelocity() * 5;
         }
         
         if(distLeft < arrivalDistance){
-          linear_speed = distLeft/arrivalDistance * kinematic.max_speed - kinematic.getSpeed();
+          linear_speed = (distLeft/arrivalDistance * kinematic.max_speed) - kinematic.getSpeed();
         }
         
         println(kinematic.getRotationalVelocity() + ", " +  kinematic.getSpeed() + ", " + distLeft + ", " + dr);
