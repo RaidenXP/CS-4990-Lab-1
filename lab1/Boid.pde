@@ -64,15 +64,18 @@ class Boid
           //rotational_speed = (dr/arrivalAngle * kinematic.max_rotational_speed) - kinematic.getRotationalVelocity() * 5;
         }
         
-        if(distLeft < arrivalDistance){
+        if(distLeft < arrivalDistance && waypoints.isEmpty()){
           linear_speed = (distLeft/arrivalDistance * kinematic.max_speed) - kinematic.getSpeed();
         }
+        //else if (distLeft < 100){
+        //  linear_speed = (distLeft/arrivalDistance * kinematic.max_speed) - kinematic.getSpeed();
+        //}
         
         println(kinematic.getRotationalVelocity() + ", " +  kinematic.getSpeed() + ", " + distLeft + ", " + dr);
         
         kinematic.increaseSpeed(linear_speed * dt, rotational_speed * dt);
         
-        if(distLeft < 10 && kinematic.getSpeed() < 1 && !(waypoints.isEmpty())){
+        if(distLeft < 10 && !(waypoints.isEmpty())){
           follow(waypoints);
         }
         
