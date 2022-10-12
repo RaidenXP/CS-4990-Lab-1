@@ -49,29 +49,33 @@ class Boid
         float target_angle = atan2(target.y - currentPos.y, target.x - currentPos.x);
         float dr = normalize_angle_left_right(target_angle - kinematic.getHeading());
         
+        PVector currentDir = PVector.sub(target, currentPos).normalize();
+        PVector futureDir = currentDir.copy();
+        
+        if (waypoints.size() > 0){
+          futureDir = PVector.sub(waypoints.get(0), target).normalize();
+        }
+        
         if(dr < 0){
           rotational_speed = -1.0 * kinematic.max_rotational_speed; 
         }
         
         if(abs(dr) < arrivalAngle){
-          //old method
-          //rotational_speed = (dr/arrivalAngle * kinematic.max_rotational_speed) - kinematic.getRotationalVelocity();
-          
-          //method 1
-          rotational_speed = ((dr/arrivalAngle * kinematic.max_rotational_speed) - kinematic.getRotationalVelocity()) * 20;
-          
-          //method 2
-          //rotational_speed = (dr/arrivalAngle * kinematic.max_rotational_speed) - kinematic.getRotationalVelocity() * 5;
+          rotational_speed = ((dr/arrivalAngle * kinematic.max_rotational_speed) - kinematic.getRotationalVelocity()) * 15;
         }
+        
+        //printing out dot product to see if the directions are going the same
+        println(PVector.dot(currentDir, futureDir));
         
         if(distLeft < arrivalDistance && waypoints.isEmpty()){
           linear_speed = (distLeft/arrivalDistance * kinematic.max_speed) - kinematic.getSpeed();
         }
-        //else if (distLeft < 100){
-        //  linear_speed = (distLeft/arrivalDistance * kinematic.max_speed) - kinematic.getSpeed();
-        //}
+        else if(distLeft < 100 && PVector.dot(currentDir, futureDir) < 0.6 && PVector.dot(currentDir, futureDir) > -1.0){
+          linear_speed = ((distLeft/arrivalDistance * kinematic.max_speed) - kinematic.getSpeed());
+        }
         
-        println(kinematic.getRotationalVelocity() + ", " +  kinematic.getSpeed() + ", " + distLeft + ", " + dr);
+        //printing out speeds and distance left
+        //println(kinematic.getRotationalVelocity() + ", " +  kinematic.getSpeed() + ", " + distLeft + ", " + dr);
         
         kinematic.increaseSpeed(linear_speed * dt, rotational_speed * dt);
         
@@ -132,6 +136,10 @@ class Boid
    void follow(ArrayList<PVector> waypoints)
    {
       // TODO: change to follow *all* waypoints
+      while(waypoints.size() > 1 && waypoints.get(0).x == waypoints.get(1).x && waypoints.get(0).y == waypoints.get(1).y){
+       waypoints.remove(0); 
+      }
+      
       this.target = waypoints.get(0);
       waypoints.remove(0);
    }
