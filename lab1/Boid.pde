@@ -52,6 +52,8 @@ class Boid
         PVector currentDir = PVector.sub(target, currentPos).normalize();
         PVector futureDir = currentDir.copy();
         
+        //println(currentDir);
+        
         if (waypoints.size() > 0){
           futureDir = PVector.sub(waypoints.get(0), target).normalize();
         }
@@ -65,7 +67,7 @@ class Boid
         }
         
         //printing out dot product to see if the directions are going the same
-        println(PVector.dot(currentDir, futureDir));
+        //println(PVector.dot(currentDir, futureDir));
         
         if(distLeft < arrivalDistance && waypoints.isEmpty()){
           linear_speed = (distLeft/arrivalDistance * kinematic.max_speed) - kinematic.getSpeed();
