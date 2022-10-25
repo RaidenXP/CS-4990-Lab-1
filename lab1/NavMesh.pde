@@ -24,29 +24,24 @@ class NavMesh
    NavMesh()
    {
        navMesh = new ArrayList<Node>();
-       
-       Node first = new Node();
-       first.id = 0;
-       first.polygon = map.walls;
-       
-       navMesh.add(first);
-       
        reflexAng = new ArrayList<PVector>();
    }
    
    void bake(Map map)
    {
        /// generate the graph you need for pathfinding
-       reflexAng.clear();
        
+       // set up/reset for each map
+       reflexAng.clear();
        navMesh.clear();
        
        Node first = new Node();
        first.id = 0;
-       first.polygon = map.walls;
+       first.polygon = new ArrayList<Wall>(map.walls);
        
        navMesh.add(first);
        
+       // find reflex angles
        for(int i = 0; i < navMesh.get(0).polygon.size(); ++i){
           int next = i + 1;
           
@@ -62,24 +57,89 @@ class NavMesh
           }
        }
        
-       for(int i = 0; i < reflexAng.size(); ++i){
-           PVector start = new PVector(reflexAng.get(i).x, reflexAng.get(i).y);
-           for(Wall w : navMesh.get(0).polygon){
-               PVector direction = PVector.sub(w.start, start);  
-               PVector shortStart = PVector.add(start, PVector.mult(direction, 0.01));
-               PVector shortEnd = PVector.add(w.start, PVector.mult(direction, -0.01));
-             
-               if(placeable(map, navMesh.get(0).polygon, shortStart, shortEnd)){
-                  Node next = new Node();
-                  next.id = navMesh.size();
-                  next.polygon = new ArrayList<Wall>();
-                  next.polygon.add(new Wall(start, w.start));
-                  navMesh.add(next);
-                  break;
-               }
-           }
+       // split the initial polygon into two
+       if(reflexAng.size() > 0){
+         genGraph(navMesh.get(0));
        }
    }
+   
+   void genGraph(Node n){
+     PVector tempAng = null; //<>//
+     
+     for(int i = 0; i < n.polygon.size(); ++i){
+          int next = i + 1;
+          
+          if(next >= n.polygon.size()){
+            next = 0;
+          }
+          
+          float value = PVector.dot(n.polygon.get(i).normal, n.polygon.get(next).direction);
+          
+          if(value > 0){
+            PVector angle = new PVector(n.polygon.get(i).end.x, n.polygon.get(i).end.y);
+            tempAng = angle;
+            break;
+          }
+     }
+     
+     if(tempAng != null){
+         PVector start = tempAng;
+         Node next = new Node();
+         
+         //place line
+         for(Wall w : n.polygon){
+             PVector direction = PVector.sub(w.start, start);  
+             PVector shortStart = PVector.add(start, PVector.mult(direction, 0.01));
+             PVector shortEnd = PVector.add(w.start, PVector.mult(direction, -0.01));
+             
+             if(placeable(map, n.polygon, shortStart, shortEnd)){
+                 next.id = navMesh.size();
+                 next.polygon = new ArrayList<Wall>();
+                 next.polygon.add(new Wall(start, w.start));
+                 navMesh.add(next);
+                 break;
+             }
+         }
+        
+         //create two new polygons from the orginal map
+         PVector point = new PVector(next.polygon.get(0).end.x, next.polygon.get(0).end.y);
+         int index = 0;
+        
+         for(int i = 0; i < n.polygon.size(); ++i){
+            if(point.x == n.polygon.get(i).start.x && point.y == n.polygon.get(i).start.y){
+                index = i;
+                break;
+            }
+         }
+        
+         // shared edge
+         n.polygon.add(next.polygon.get(0));
+         
+         //add neighbors
+         n.neighbors = new ArrayList<Node>();
+         next.neighbors = new ArrayList<Node>();
+         n.neighbors.add(next);
+         next.neighbors.add(n);
+        
+         //create the polygon starting from the end point of new edge coming back to the start of new edge
+         while(point.x != start.x || point.y != start.y){
+             if(index >= n.polygon.size()){
+                index = 0; 
+             }
+          
+             point = n.polygon.get(index).start;
+            
+             if(point.x != start.x || point.y != start.y){
+               next.polygon.add(n.polygon.get(index));
+               n.polygon.remove(index);
+             } 
+         }
+     }
+     else{
+       return; 
+     }
+   }
+   
    
    boolean placeable(Map map, ArrayList<Wall> polygon, PVector from, PVector to){
      boolean flag = false;
@@ -90,6 +150,7 @@ class NavMesh
      
      return flag && map.isReachable(to) && !map.collides(from, to);
    }
+   
    
    ArrayList<PVector> findPath(PVector start, PVector destination)
    {
@@ -112,7 +173,16 @@ class NavMesh
           circle(reflexAng.get(i).x, reflexAng.get(i).y, 10);
       }
       
+      int r = 23;
+      int g = 212;
+      int b = 233;
+      
       for(Node n : navMesh){
+         //r += 100;
+         //g -= 100;
+         //b -= 50;
+        
+         stroke(r, g, b);
          for(Wall w : n.polygon){
            line(w.start.x, w.start.y,  w.end.x, w.end.y); 
          }
