@@ -113,17 +113,11 @@ class NavMesh
          }
         
          // shared edge
-         n.polygon.add(next.polygon.get(0));
-         
-         //add neighbors
-         n.neighbors = new ArrayList<Node>();
-         next.neighbors = new ArrayList<Node>();
-         n.neighbors.add(next);
-         next.neighbors.add(n);
+         n.polygon.add(new Wall(next.polygon.get(0).end, next.polygon.get(0).start));
         
          //create the polygon starting from the end point of new edge coming back to the start of new edge
          while(point.x != start.x || point.y != start.y){
-             if(index >= n.polygon.size()){
+             if(index >= n.polygon.size() - 1){
                 index = 0; 
              }
           
@@ -134,6 +128,10 @@ class NavMesh
                n.polygon.remove(index);
              } 
          }
+         
+         // split the polygon in two again until doesn't have to plit anymore
+         genGraph(next);
+         genGraph(n);
      }
      else{
        return; 
@@ -173,16 +171,12 @@ class NavMesh
           circle(reflexAng.get(i).x, reflexAng.get(i).y, 10);
       }
       
-      int r = 23;
-      int g = 212;
-      int b = 233;
+      float r = 23;
+      float g = 212;
+      float b = 233;
       
       for(Node n : navMesh){
-         //r += 100;
-         //g -= 100;
-         //b -= 50;
-        
-         stroke(r, g, b);
+         stroke(r += 50,g += 30,b -= 45);
          for(Wall w : n.polygon){
            line(w.start.x, w.start.y,  w.end.x, w.end.y); 
          }
