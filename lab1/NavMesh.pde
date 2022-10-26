@@ -20,14 +20,12 @@ class NavMesh
 { 
    ArrayList<Node> navMesh;
    ArrayList<PVector> reflexAng;
-   ArrayList<Wall> navEdges;
    ArrayList<ArrayList<Wall>> polygons;
    
    NavMesh()
    {
        navMesh = new ArrayList<Node>();
        reflexAng = new ArrayList<PVector>();
-       navEdges = new ArrayList<Wall>();
        polygons = new ArrayList<ArrayList<Wall>>();
    }
    
@@ -38,7 +36,8 @@ class NavMesh
        // set up/reset for each map
        reflexAng.clear();
        navMesh.clear();
-       navEdges.clear();
+       
+       // using this for now to store all polygons
        polygons.clear();
        
        Node first = new Node();
@@ -47,7 +46,8 @@ class NavMesh
        
        navMesh.add(first);
        
-       // find reflex angles
+       // find reflex angles to draw
+       // here for now but might get rid later on
        for(int i = 0; i < navMesh.get(0).polygon.size(); ++i){
           int next = i + 1;
           
@@ -70,14 +70,16 @@ class NavMesh
          genGraph(firstPoly);
        }
    }
-   
+    //<>//
    void genGraph(ArrayList<Wall> polygon){
-     //reflex angle
+     // marker to check if the wall before has a relfex angle coming
      int wallIndex = -1; //<>//
+     
+     // two polygons
      ArrayList<Wall> freshPolygon = new ArrayList<Wall>();
      ArrayList<Wall> otherPolygon = new ArrayList<Wall>();
      
-     //find first reflex angle for current polygon
+     //find first reflex angle for current polygon and divide accordingly
      for(int i = 0; i < polygon.size(); ++i){
           int next = i + 1;
           
@@ -88,17 +90,26 @@ class NavMesh
           float value = PVector.dot(polygon.get(i).normal, polygon.get(next).direction);
           
           if(value > 0){
+              // just a marker
+              // i marks the wall before the reflex angle
               wallIndex = i;
+              
+              // loop that does the main process of dividing the parent polygon
               for(int j = 0; j < polygon.size(); ++ j){
                  PVector direction = PVector.sub(polygon.get(j).start, polygon.get(i).end);  
                  PVector shortStart = PVector.add(polygon.get(i).end, PVector.mult(direction, 0.01));
                  PVector shortEnd = PVector.add(polygon.get(j).start, PVector.mult(direction, -0.01));
                  
+                 // wall that will be made if placeable
                  Wall temp = new Wall(polygon.get(i).end, polygon.get(j).start);
                  if(placeable(map, polygon, shortStart, shortEnd, temp)){
+                     // reverse direcction of the temp wall above
                      Wall tempPrime = new Wall(polygon.get(j).start, polygon.get(i).end);
                      
+                     // j will be the wall that the reflex angle is connected to
+                     // k will be the point where we should "remove" consecutive edges until we have our otherPolygon
                      int k = 0;
+                     
                      if(j == 0){
                          k = polygon.size() - 1; 
                      }
@@ -186,7 +197,7 @@ class NavMesh
    void update(float dt)
    {
       draw();
-   }
+   } //<>//
    
    void draw()
    {
