@@ -20,11 +20,13 @@ class NavMesh
 { 
    ArrayList<Node> navMesh;
    ArrayList<PVector> reflexAng;
+   ArrayList<Wall> navEdges;
    
    NavMesh()
    {
        navMesh = new ArrayList<Node>();
        reflexAng = new ArrayList<PVector>();
+       navEdges = new ArrayList<Wall>();
    }
    
    void bake(Map map)
@@ -34,6 +36,7 @@ class NavMesh
        // set up/reset for each map
        reflexAng.clear();
        navMesh.clear();
+       navEdges.clear();
        
        Node first = new Node();
        first.id = 0;
@@ -64,8 +67,10 @@ class NavMesh
    }
    
    void genGraph(Node n){
+     //reflex angle
      PVector tempAng = null; //<>//
      
+     //find first reflex angle for current polygon
      for(int i = 0; i < n.polygon.size(); ++i){
           int next = i + 1;
           
@@ -92,16 +97,27 @@ class NavMesh
              PVector shortStart = PVector.add(start, PVector.mult(direction, 0.01));
              PVector shortEnd = PVector.add(w.start, PVector.mult(direction, -0.01));
              
-             if(placeable(map, n.polygon, shortStart, shortEnd)){
+             Wall temp = new Wall(start, w.start);
+             
+             if(placeable(map, n.polygon, shortStart, shortEnd, temp)){
                  next.id = navMesh.size();
                  next.polygon = new ArrayList<Wall>();
-                 next.polygon.add(new Wall(start, w.start));
+                 next.polygon.add(temp);
+                 
+                 navEdges.add(temp);
+                 
+                 //if(next.polygon.get(0).start.x == n.polygon.get(0).start.x && next.polygon.get(0).start.y == n.polygon.get(0).start.y
+                 //  && next.polygon.get(0).end.x == n.polygon.get(0).end.x && next.polygon.get(0).end.y == n.polygon.get(0).end.y)
+                 //{
+                 //  continue; 
+                 //}
+                 
                  navMesh.add(next);
                  break;
              }
          }
         
-         //create two new polygons from the orginal map
+         //create two new polygons process starts here
          PVector point = new PVector(next.polygon.get(0).end.x, next.polygon.get(0).end.y);
          int index = 0;
         
@@ -112,11 +128,13 @@ class NavMesh
             }
          }
         
-         // shared edge
+         // shared edge reversed
          n.polygon.add(new Wall(next.polygon.get(0).end, next.polygon.get(0).start));
         
          //create the polygon starting from the end point of new edge coming back to the start of new edge
          while(point.x != start.x || point.y != start.y){
+             
+             // something may be wrong with this logic
              if(index >= n.polygon.size() - 1){
                 index = 0; 
              }
@@ -129,7 +147,7 @@ class NavMesh
              } 
          }
          
-         // split the polygon in two again until doesn't have to plit anymore
+         // split the polygon in two again until doesn't have to split anymore
          genGraph(next);
          genGraph(n);
      }
@@ -139,14 +157,24 @@ class NavMesh
    }
    
    
-   boolean placeable(Map map, ArrayList<Wall> polygon, PVector from, PVector to){
+   boolean placeable(Map map, ArrayList<Wall> polygon, PVector from, PVector to, Wall tempW){
      boolean flag = false;
+     boolean otherFlag = true;
      
      for(Wall w : polygon){
          flag = !(w.crosses(from,to)); 
      }
      
-     return flag && map.isReachable(to) && !map.collides(from, to);
+     for(Wall w : navEdges){
+         if(w.start.x == tempW.start.x && w.start.y == tempW.start.y && w.end.x == tempW.end.x && w.end.y == tempW.end.y
+           || w.end.x == tempW.start.x && w.end.y == tempW.start.y && w.start.x == tempW.end.x && w.start.y == tempW.end.y)
+         {
+           otherFlag = false;
+           break;
+         }
+     }
+     
+     return flag && map.isReachable(to) && !map.collides(from, to) && otherFlag;
    }
    
    
