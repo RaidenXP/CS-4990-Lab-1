@@ -93,6 +93,9 @@ class NavMesh
               // just a marker
               // i marks the wall before the reflex angle
               wallIndex = i;
+              int chosen = 0;
+              float min_size = Float.POSITIVE_INFINITY;
+              Wall temp = new Wall(polygon.get(0).end, polygon.get(0).start);
               
               // loop that does the main process of dividing the parent polygon
               for(int j = 0; j < polygon.size(); ++ j){
@@ -101,54 +104,58 @@ class NavMesh
                  PVector shortEnd = PVector.add(polygon.get(j).start, PVector.mult(direction, -0.01));
                  
                  // wall that will be made if placeable
-                 Wall temp = new Wall(polygon.get(i).end, polygon.get(j).start);
-                 if(placeable(map, polygon, shortStart, shortEnd, temp)){
-                     // reverse direcction of the temp wall above
-                     Wall tempPrime = new Wall(polygon.get(j).start, polygon.get(i).end);
-                     
-                     // j will be the wall that the reflex angle is connected to
-                     // k will be the point where we should "remove" consecutive edges until we have our otherPolygon
-                     int k = 0;
-                     
-                     if(j == 0){
-                         k = polygon.size() - 1; 
-                     }
-                     else{
-                         k = j - 1; 
-                     }
-                     
-                     while(i != j){
-                         freshPolygon.add(polygon.get(j));
-                         ++j;
-                         
-                         if(j >= polygon.size()){
-                             j = 0; 
-                         }
-                     }
-                     
-                     freshPolygon.add(polygon.get(j));
-                     
-                     ++j;
-                     if(j >= polygon.size()){
-                       j = 0; 
-                     }
-                     
-                     while(j != k){
-                         otherPolygon.add(polygon.get(j));
-                         ++j;
-                         
-                         if(j >= polygon.size()){
-                             j = 0; 
-                         }
-                     }
-                     
-                     otherPolygon.add(polygon.get(j));
-                     
-                     freshPolygon.add(temp);
-                     otherPolygon.add(tempPrime);
-                     break;
+                 temp = new Wall(polygon.get(i).end, polygon.get(j).start);
+                 if(placeable(map, polygon, shortStart, shortEnd, temp) && temp.len < min_size){
+                     min_size = temp.len;
+                     chosen = j;
                  }
               }
+              
+              // reverse direcction of the temp wall above
+              temp = new Wall(polygon.get(i).end, polygon.get(chosen).start);
+              Wall tempPrime = new Wall(polygon.get(chosen).start, polygon.get(i).end);
+             
+              // j will be the wall that the reflex angle is connected to
+              // k will be the point where we should "remove" consecutive edges until we have our otherPolygon
+              int k = 0;
+             
+              if(chosen == 0){
+                 k = polygon.size() - 1; 
+              }
+              else{
+                 k = chosen - 1; 
+              }
+             
+              while(i != chosen){
+                 freshPolygon.add(polygon.get(chosen));
+                  ++chosen;
+                 
+                  if(chosen >= polygon.size()){
+                     chosen = 0; 
+                  }
+              }
+             
+              freshPolygon.add(polygon.get(chosen));
+             
+              ++chosen;
+              if(chosen >= polygon.size()){
+                chosen = 0; 
+              }
+             
+              while(chosen != k){
+                  otherPolygon.add(polygon.get(chosen));
+                  ++chosen;
+                 
+                  if(chosen >= polygon.size()){
+                     chosen = 0; 
+                  }
+              }
+             
+              otherPolygon.add(polygon.get(chosen));
+             
+              freshPolygon.add(temp);
+              otherPolygon.add(tempPrime);
+              
               break;
           }
      }
