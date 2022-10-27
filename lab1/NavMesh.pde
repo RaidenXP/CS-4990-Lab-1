@@ -17,19 +17,13 @@ class Node
    float b;
 }
 
-
-
 class NavMesh
 { 
    ArrayList<Node> navMesh;
-   ArrayList<PVector> reflexAng;
-   //ArrayList<ArrayList<Wall>> polygons;
    
    NavMesh()
    {
        navMesh = new ArrayList<Node>();
-       reflexAng = new ArrayList<PVector>();
-       //polygons = new ArrayList<ArrayList<Wall>>();
    }
    
    void bake(Map map)
@@ -37,38 +31,54 @@ class NavMesh
        /// generate the graph you need for pathfinding
        
        // set up/reset for each map
-       reflexAng.clear();
        navMesh.clear();
-       
-       // using this for now to store all polygons
-       //polygons.clear();
-       
-       // find reflex angles to draw
-       // here for now but might get rid later on
-       for(int i = 0; i < map.walls.size(); ++i){
-          int next = i + 1;
-          
-          if(next >= map.walls.size()){
-            next = 0;
-          }
-          
-          float value = PVector.dot(map.walls.get(i).normal, map.walls.get(next).direction);
-          
-          if(value > 0){
-            PVector angle = new PVector(map.walls.get(i).end.x, map.walls.get(i).end.y);
-            reflexAng.add(angle);
-          }
-       }
        
        ArrayList<Wall> firstPoly = new ArrayList<Wall>(map.walls);
        
        // split the initial polygon into two
        genGraph(firstPoly);
+       
+       // finds neighbors, but very inefficient
+       for(int i = 0; i < navMesh.size(); ++i){
+           for(int j = 0; j < navMesh.size(); ++j){
+               if(i == j){
+                 continue; 
+               }
+               else{
+                 boolean exit = false;
+                 
+                 for(int k = 0; k < navMesh.get(i).polygon.size(); ++k){
+                   for(int l = 0; l < navMesh.get(j).polygon.size(); ++l){
+                       if(navMesh.get(i).polygon.get(k).start.x == navMesh.get(j).polygon.get(l).end.x &&
+                         navMesh.get(i).polygon.get(k).start.y == navMesh.get(j).polygon.get(l).end.y &&
+                         navMesh.get(i).polygon.get(k).end.x == navMesh.get(j).polygon.get(l).start.x &&
+                         navMesh.get(i).polygon.get(k).end.y == navMesh.get(j).polygon.get(l).start.y &&
+                         !navMesh.get(i).neighbors.contains(navMesh.get(j)) && !navMesh.get(j).neighbors.contains(navMesh.get(i))){
+                           
+                           navMesh.get(i).connections.add(navMesh.get(i).polygon.get(k));
+                           navMesh.get(i).connections.add(navMesh.get(j).polygon.get(l));
+                           navMesh.get(i).neighbors.add(navMesh.get(j));
+                           navMesh.get(j).neighbors.add(navMesh.get(i));
+                           exit = true;
+                       }
+                       
+                       if(exit){
+                          break; 
+                       }
+                   }
+                   
+                   if(exit){
+                     break; 
+                   }
+                 }
+               }
+           }
+       }
    }
-    //<>//
+   
    void genGraph(ArrayList<Wall> polygon){
      // marker to check if the wall before has a relfex angle coming
-     int wallIndex = -1; //<>//
+     int wallIndex = -1;
      
      // two polygons
      ArrayList<Wall> freshPolygon = new ArrayList<Wall>();
@@ -169,11 +179,13 @@ class NavMesh
          Node n = new Node();
          n.id = navMesh.size();
          n.polygon = new ArrayList<Wall>(polygon);
+         n.neighbors = new ArrayList<Node>();
+         n.connections = new ArrayList<Wall>();
          n.center = new PVector(0,0);
          
          for(int z = 0; z < polygon.size(); ++z){
              n.center.x += polygon.get(z).end.x;
-             n.center.y += polygon.get(z).end.x;
+             n.center.y += polygon.get(z).end.y;
          }
          
          n.center.x /= polygon.size();
@@ -224,37 +236,38 @@ class NavMesh
    void update(float dt)
    {
       draw();
-   } //<>//
+   }
    
    void draw()
    {
       /// use this to draw the nav mesh graph
-      for(int i = 0; i < reflexAng.size(); ++i){ //<>//
-          stroke(23, 212, 233);
-          circle(reflexAng.get(i).x, reflexAng.get(i).y, 10);
-      }
-      
-      //float r = 23;
-      //float g = 212;
-      //float b = 233;
-      
       for(Node n : navMesh){
          stroke(n.r, n.g, n.b);
          for(Wall w : n.polygon){
            line(w.start.x, w.start.y,  w.end.x, w.end.y); 
          }
+         
+         stroke(233, 22, 233);
+         fill(233, 0, 233);
+         circle(n.center.x, n.center.y, 5);
       }
       
-      //float r = 23;
-      //float g = 212;
-      //float b = 233;
-      
-      //for(ArrayList<Wall> p : polygons){
-      //    stroke(r,g,b);
+      // find reflex angles to draw
+      for(int i = 0; i < map.walls.size(); ++i){
+         int next = i + 1;
           
-      //    for(Wall w : p){
-      //      line(w.start.x, w.start.y,  w.end.x, w.end.y); 
-      //    }
-      //}
+         if(next >= map.walls.size()){
+           next = 0;
+         }
+          
+         float value = PVector.dot(map.walls.get(i).normal, map.walls.get(next).direction);
+          
+         if(value > 0){
+           PVector angle = new PVector(map.walls.get(i).end.x, map.walls.get(i).end.y);
+            
+           stroke(23, 212, 233);
+           circle(angle.x, angle.y, 10);
+         }
+       }
    }
 }
