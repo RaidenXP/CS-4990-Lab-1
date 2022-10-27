@@ -12,6 +12,9 @@ class Node
    PVector center;
    ArrayList<Node> neighbors;
    ArrayList<Wall> connections;
+   float r;
+   float g;
+   float b;
 }
 
 
@@ -20,13 +23,13 @@ class NavMesh
 { 
    ArrayList<Node> navMesh;
    ArrayList<PVector> reflexAng;
-   ArrayList<ArrayList<Wall>> polygons;
+   //ArrayList<ArrayList<Wall>> polygons;
    
    NavMesh()
    {
        navMesh = new ArrayList<Node>();
        reflexAng = new ArrayList<PVector>();
-       polygons = new ArrayList<ArrayList<Wall>>();
+       //polygons = new ArrayList<ArrayList<Wall>>();
    }
    
    void bake(Map map)
@@ -38,27 +41,21 @@ class NavMesh
        navMesh.clear();
        
        // using this for now to store all polygons
-       polygons.clear();
-       
-       Node first = new Node();
-       first.id = 0;
-       first.polygon = new ArrayList<Wall>(map.walls);
-       
-       navMesh.add(first);
+       //polygons.clear();
        
        // find reflex angles to draw
        // here for now but might get rid later on
-       for(int i = 0; i < navMesh.get(0).polygon.size(); ++i){
+       for(int i = 0; i < map.walls.size(); ++i){
           int next = i + 1;
           
-          if(next >= navMesh.get(0).polygon.size()){
+          if(next >= map.walls.size()){
             next = 0;
           }
           
-          float value = PVector.dot(navMesh.get(0).polygon.get(i).normal, navMesh.get(0).polygon.get(next).direction);
+          float value = PVector.dot(map.walls.get(i).normal, map.walls.get(next).direction);
           
           if(value > 0){
-            PVector angle = new PVector(navMesh.get(0).polygon.get(i).end.x, navMesh.get(0).polygon.get(i).end.y);
+            PVector angle = new PVector(map.walls.get(i).end.x, map.walls.get(i).end.y);
             reflexAng.add(angle);
           }
        }
@@ -66,9 +63,7 @@ class NavMesh
        ArrayList<Wall> firstPoly = new ArrayList<Wall>(map.walls);
        
        // split the initial polygon into two
-       if(reflexAng.size() > 0){
-         genGraph(firstPoly);
-       }
+       genGraph(firstPoly);
    }
     //<>//
    void genGraph(ArrayList<Wall> polygon){
@@ -93,9 +88,15 @@ class NavMesh
               // just a marker
               // i marks the wall before the reflex angle
               wallIndex = i;
+              
+              //shortest edge we are looking for
               int chosen = 0;
+              
+              //initial min edge length
               float min_size = Float.POSITIVE_INFINITY;
-              Wall temp = new Wall(polygon.get(0).end, polygon.get(0).start);
+              
+              // temp set
+              Wall temp = new Wall(polygon.get(i).end, polygon.get(chosen).start);
               
               // loop that does the main process of dividing the parent polygon
               for(int j = 0; j < polygon.size(); ++ j){
@@ -103,7 +104,7 @@ class NavMesh
                  PVector shortStart = PVector.add(polygon.get(i).end, PVector.mult(direction, 0.01));
                  PVector shortEnd = PVector.add(polygon.get(j).start, PVector.mult(direction, -0.01));
                  
-                 // wall that will be made if placeable
+                 // wall that will be made if placeable and shortest
                  temp = new Wall(polygon.get(i).end, polygon.get(j).start);
                  if(placeable(map, polygon, shortStart, shortEnd, temp) && temp.len < min_size){
                      min_size = temp.len;
@@ -111,11 +112,11 @@ class NavMesh
                  }
               }
               
-              // reverse direcction of the temp wall above
+              // reset temp and reverse direcction of temp above
               temp = new Wall(polygon.get(i).end, polygon.get(chosen).start);
               Wall tempPrime = new Wall(polygon.get(chosen).start, polygon.get(i).end);
              
-              // j will be the wall that the reflex angle is connected to
+              // chosen will be the wall that the reflex angle is connected to
               // k will be the point where we should "remove" consecutive edges until we have our otherPolygon
               int k = 0;
              
@@ -165,7 +166,26 @@ class NavMesh
          genGraph(otherPolygon);
      }
      else{
-         polygons.add(polygon);
+         Node n = new Node();
+         n.id = navMesh.size();
+         n.polygon = new ArrayList<Wall>(polygon);
+         n.center = new PVector(0,0);
+         
+         for(int z = 0; z < polygon.size(); ++z){
+             n.center.x += polygon.get(z).end.x;
+             n.center.y += polygon.get(z).end.x;
+         }
+         
+         n.center.x /= polygon.size();
+         n.center.y /= polygon.size();
+         
+         n.r = random(0, 255);
+         n.g = random(0, 255);
+         n.b = random(0, 255);
+         
+         navMesh.add(n);
+         
+         //polygons.add(polygon);
          return; 
      }
      
@@ -218,17 +238,23 @@ class NavMesh
       //float g = 212;
       //float b = 233;
       
-      //for(Node n : navMesh){
-      //   stroke(r += 50,g += 30,b -= 45);
-      //   for(Wall w : n.polygon){
-      //     line(w.start.x, w.start.y,  w.end.x, w.end.y); 
-      //   }
-      //}
-      
-      for(ArrayList<Wall> p : polygons){
-          for(Wall w : p){
-            line(w.start.x, w.start.y,  w.end.x, w.end.y); 
-          }
+      for(Node n : navMesh){
+         stroke(n.r, n.g, n.b);
+         for(Wall w : n.polygon){
+           line(w.start.x, w.start.y,  w.end.x, w.end.y); 
+         }
       }
+      
+      //float r = 23;
+      //float g = 212;
+      //float b = 233;
+      
+      //for(ArrayList<Wall> p : polygons){
+      //    stroke(r,g,b);
+          
+      //    for(Wall w : p){
+      //      line(w.start.x, w.start.y,  w.end.x, w.end.y); 
+      //    }
+      //}
    }
 }
