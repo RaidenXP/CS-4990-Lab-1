@@ -131,8 +131,10 @@ class Boid
    
    void seek(PVector target)
    {
-      this.target = target;
-      
+      //this.target = target;
+      waypoints.clear(); //<>//
+      waypoints = nm.findPath(kinematic.getPosition(), target);
+      follow(waypoints);
    }
    
    void follow(ArrayList<PVector> waypoints)

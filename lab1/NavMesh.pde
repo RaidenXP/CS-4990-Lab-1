@@ -83,7 +83,7 @@ class NavMesh
                          !navMesh.get(i).neighbors.contains(navMesh.get(j)) && !navMesh.get(j).neighbors.contains(navMesh.get(i))){
                            
                            navMesh.get(i).connections.add(navMesh.get(i).polygon.get(k));
-                           navMesh.get(i).connections.add(navMesh.get(j).polygon.get(l));
+                           navMesh.get(j).connections.add(navMesh.get(j).polygon.get(l));
                            navMesh.get(i).neighbors.add(navMesh.get(j));
                            navMesh.get(j).neighbors.add(navMesh.get(i));
                            exit = true;
@@ -254,7 +254,7 @@ class NavMesh
    ArrayList<PVector> findPath(PVector start, PVector destination)
    {
       /// implement A* to find a path
-      ArrayList<PVector> result = new ArrayList<PVector>();
+      ArrayList<PVector> result = new ArrayList<PVector>(); //<>//
       
       PriorityQueue<Node> frontier = new PriorityQueue<Node>(new NodeComparator());
       HashSet<Integer> visited = new HashSet<Integer>();
@@ -273,15 +273,12 @@ class NavMesh
               destIdx = i;
               destID = navMesh.get(i).id;
           }
+          
+          navMesh.get(i).cost = 0;
+          navMesh.get(i).heuristic = 0;
       }
       
-      navMesh.get(startIdx).cost = 0;
-      navMesh.get(startIdx).heuristic = 0;
-      
       frontier.add(navMesh.get(startIdx));
-      
-      navMesh.get(destIdx).cost = 0;
-      navMesh.get(destIdx).heuristic = 0;
       
       if(startIdx == destIdx){
          result.add(start);
@@ -296,12 +293,13 @@ class NavMesh
             // if our visiting item is our destination
             if(visiting.id == destID){
                 Node temp = visiting;
-                result.add(0, temp.prevPoint);
                 //resverse path
                 while(temp.prevPoint != null){
-                    temp = visiting.previous;
-                    result.add(0, temp.prevPoint);
+                    result.add(0, temp.prevPoint);  
+                    temp = temp.previous;
                 }
+                
+                result.add(destination);
                 return result;
             }
             
@@ -333,10 +331,10 @@ class NavMesh
                 // look for the shared edge's midpoint
                 for(int j = 0; j < visiting.connections.size(); ++j){
                   for(int k = 0; k < visiting.neighbors.get(i).connections.size(); ++k){
-                      if(visiting.connections.get(j).start.x == visiting.neighbors.get(i).connections.get(j).end.x &&
-                          visiting.connections.get(j).start.y == visiting.neighbors.get(i).connections.get(j).end.y &&
-                          visiting.connections.get(j).end.x == visiting.neighbors.get(i).connections.get(j).start.x &&
-                          visiting.connections.get(j).end.y == visiting.neighbors.get(i).connections.get(j).start.y){
+                      if(visiting.connections.get(j).start.x == visiting.neighbors.get(i).connections.get(k).end.x &&
+                          visiting.connections.get(j).start.y == visiting.neighbors.get(i).connections.get(k).end.y &&
+                          visiting.connections.get(j).end.x == visiting.neighbors.get(i).connections.get(k).start.x &&
+                          visiting.connections.get(j).end.y == visiting.neighbors.get(i).connections.get(k).start.y){
                             previousMid = visiting.connections.get(j).center();
                             exit = true;
                       }
@@ -372,13 +370,20 @@ class NavMesh
       /// use this to draw the nav mesh graph
       for(Node n : navMesh){
          stroke(n.r, n.g, n.b);
+         
+         //draws the polygon
          for(Wall w : n.polygon){
            line(w.start.x, w.start.y,  w.end.x, w.end.y); 
          }
          
          stroke(233, 22, 233);
          fill(233, 0, 233);
-         circle(n.center.x, n.center.y, 5);
+         circle(n.center.x, n.center.y, 7);
+         
+         //draws the lines from center to midpoint edge
+         for( Wall w : n.connections){
+           line(w.center().x, w.center().y, n.center.x, n.center.y);
+         }
       }
       
       // find reflex angles to draw
