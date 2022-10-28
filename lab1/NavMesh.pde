@@ -274,9 +274,13 @@ class NavMesh
               destID = navMesh.get(i).id;
           }
           
+          // reset the values or set
           navMesh.get(i).cost = 0;
           navMesh.get(i).heuristic = 0;
+          navMesh.get(i).previous = null;
+          navMesh.get(i).prevPoint = null;
       }
+      
       
       frontier.add(navMesh.get(startIdx));
       
