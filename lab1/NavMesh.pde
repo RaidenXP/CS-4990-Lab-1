@@ -1,21 +1,48 @@
 // Useful to sort lists by a custom key
 import java.util.Comparator;
+import java.util.PriorityQueue;
+import java.util.HashSet;
 
+class NodeComparator implements Comparator<Node>{
+    int compare(Node n1, Node n2){
+        float totalN1 = n1.cost + n1.heuristic;
+        float totalN2 = n2.cost + n2.heuristic;
+        
+        if(totalN1 < totalN2){
+            return -1; 
+        }
+        else if(totalN1 > totalN2){
+            return 1; 
+        }
+        
+        return 0;
+    }
+}
 
 /// In this file you will implement your navmesh and pathfinding. 
 
 /// This node representation is just a suggestion
 class Node
 {
+   // Current Node info
    int id;
    ArrayList<Wall> polygon;
    PVector center;
    ArrayList<Node> neighbors;
    ArrayList<Wall> connections;
+   
+   // info for the frontier
+   Node previous;
+   float cost;
+   float heuristic;
+   PVector prevPoint;
+   
+   // just for coloring
    float r;
    float g;
    float b;
 }
+
 
 class NavMesh
 { 
@@ -122,7 +149,7 @@ class NavMesh
                  }
               }
               
-              // reset temp and reverse direcction of temp above
+              // reset temp and set reverse direcction of temp above
               temp = new Wall(polygon.get(i).end, polygon.get(chosen).start);
               Wall tempPrime = new Wall(polygon.get(chosen).start, polygon.get(i).end);
              
@@ -176,6 +203,7 @@ class NavMesh
          genGraph(otherPolygon);
      }
      else{
+         // used to create the child of the tree
          Node n = new Node();
          n.id = navMesh.size();
          n.polygon = new ArrayList<Wall>(polygon);
@@ -196,8 +224,6 @@ class NavMesh
          n.b = random(0, 255);
          
          navMesh.add(n);
-         
-         //polygons.add(polygon);
          return; 
      }
      
@@ -228,7 +254,110 @@ class NavMesh
    ArrayList<PVector> findPath(PVector start, PVector destination)
    {
       /// implement A* to find a path
-      ArrayList<PVector> result = null;
+      ArrayList<PVector> result = new ArrayList<PVector>();
+      
+      PriorityQueue<Node> frontier = new PriorityQueue<Node>(new NodeComparator());
+      HashSet<Integer> visited = new HashSet<Integer>();
+      
+      int startIdx = 0;
+      
+      int destIdx = 0;
+      int destID = 0;
+      
+      for(int i = 0; i < navMesh.size(); ++i){
+          if(isPointInPolygon(start, navMesh.get(i).polygon)){
+              startIdx = i;
+          }
+          
+          if(isPointInPolygon(destination, navMesh.get(i).polygon)){
+              destIdx = i;
+              destID = navMesh.get(i).id;
+          }
+      }
+      
+      navMesh.get(startIdx).cost = 0;
+      navMesh.get(startIdx).heuristic = 0;
+      
+      frontier.add(navMesh.get(startIdx));
+      
+      navMesh.get(destIdx).cost = 0;
+      navMesh.get(destIdx).heuristic = 0;
+      
+      if(startIdx == destIdx){
+         result.add(start);
+         result.add(destination);
+      }
+      else{
+         Node visiting;
+         while(frontier.size() != 0){
+            //get the front of queue
+            visiting = frontier.poll();
+            
+            // if our visiting item is our destination
+            if(visiting.id == destID){
+                Node temp = visiting;
+                result.add(0, temp.prevPoint);
+                //resverse path
+                while(temp.prevPoint != null){
+                    temp = visiting.previous;
+                    result.add(0, temp.prevPoint);
+                }
+                return result;
+            }
+            
+            // assign visiting node to visited
+            visited.add(visiting.id);
+            
+            // grab all of the neighbors
+            for(int i = 0; i < visiting.neighbors.size(); ++i){
+                // cost = cost so far + magnitude(CenterOfNeighbor - CurrentCenter)
+                float cost = visiting.cost + PVector.sub(visiting.neighbors.get(i).center, visiting.center).mag();
+                
+                // heuristic = magnitude(destinationCenter - CenterOfNeighbor)
+                float heuristic = PVector.sub(navMesh.get(destIdx).center, visiting.neighbors.get(i).center).mag();
+                
+                // if our neighbor has already been visited and has a lower cost then the cost just calculated we can just continue
+                // we could add it if we wanted to but there is no need
+                if(visited.contains(visiting.neighbors.get(i).id) && visiting.neighbors.get(i).cost <= cost){
+                    continue;
+                }
+                
+                // assign cost, heuristic, previous node, and previous Mid point to add to frontier
+                visiting.neighbors.get(i).cost = cost;
+                visiting.neighbors.get(i).heuristic = heuristic;
+                visiting.neighbors.get(i).previous = visiting;
+                
+                boolean exit = false;
+                PVector previousMid = new PVector();
+                
+                // look for the shared edge's midpoint
+                for(int j = 0; j < visiting.connections.size(); ++j){
+                  for(int k = 0; k < visiting.neighbors.get(i).connections.size(); ++k){
+                      if(visiting.connections.get(j).start.x == visiting.neighbors.get(i).connections.get(j).end.x &&
+                          visiting.connections.get(j).start.y == visiting.neighbors.get(i).connections.get(j).end.y &&
+                          visiting.connections.get(j).end.x == visiting.neighbors.get(i).connections.get(j).start.x &&
+                          visiting.connections.get(j).end.y == visiting.neighbors.get(i).connections.get(j).start.y){
+                            previousMid = visiting.connections.get(j).center();
+                            exit = true;
+                      }
+                      
+                      if(exit) break;
+                  }
+                  
+                  if(exit) break;
+                }
+                
+                // assign the previous mid point
+                visiting.neighbors.get(i).prevPoint = previousMid;
+                
+                // add to frontier
+                frontier.add(visiting.neighbors.get(i));
+                
+            }
+            
+         }
+      }
+      
       return result;
    }
    
@@ -264,8 +393,8 @@ class NavMesh
           
          if(value > 0){
            PVector angle = new PVector(map.walls.get(i).end.x, map.walls.get(i).end.y);
-            
            stroke(23, 212, 233);
+           fill(23, 212, 233);
            circle(angle.x, angle.y, 10);
          }
        }
