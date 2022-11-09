@@ -50,6 +50,7 @@ class Boid
         float dr = normalize_angle_left_right(target_angle - kinematic.getHeading());
         
         PVector currentDir = PVector.sub(target, currentPos).normalize();
+        // tried to use this to help with moving through waypoints
         PVector futureDir = currentDir.copy();
         
         //println(currentDir);
@@ -131,6 +132,7 @@ class Boid
    
    void seek(PVector target)
    {
+      //helps with pathfinding
       //this.target = target; //<>//
       waypoints = nm.findPath(kinematic.getPosition(), target);
       follow(waypoints);

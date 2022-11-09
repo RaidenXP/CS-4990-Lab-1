@@ -234,10 +234,12 @@ class NavMesh
      boolean flag = false;
      boolean otherFlag = true;
      
+     // check if the new wall croses
      for(Wall w : polygon){
          flag = !(w.crosses(from,to)); 
      }
      
+     // check if the wall is already there in the polygon
      for(Wall w : polygon){
          if(w.start.x == tempW.start.x && w.start.y == tempW.start.y && w.end.x == tempW.end.x && w.end.y == tempW.end.y
            || w.end.x == tempW.start.x && w.end.y == tempW.start.y && w.start.x == tempW.end.x && w.start.y == tempW.end.y)
